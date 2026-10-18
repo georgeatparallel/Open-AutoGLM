@@ -332,6 +332,26 @@ def test_invalid_queries_do_not_connect(mcp_server, query):
     assert not result.success and not consent.called and not mcp_server.requests
 
 
+def test_consent_renders_controls_and_transmits_exact_displayed_query():
+    from phone_agent.actions.handler import ActionHandler
+
+    query = "private secret\r\x1b[2Kpublic weather\u202eexample"
+    provider = Mock()
+    provider.name = "Fixture"
+    provider.privacy_notice = "Local fixture."
+    provider.search.return_value = "Source text"
+    action = SearchAction(
+        SearchConfig(), ActionHandler().confirmation_callback, provider
+    )
+    with patch("builtins.input", return_value="y") as prompt:
+        assert action.execute({"query": query}).success
+    display = prompt.call_args.args[0]
+    assert "\x1b" not in display and "\r" not in display and "\u202e" not in display
+    assert "\\r" in display and "\\u001b" in display and "\\u202e" in display
+    displayed_query = display.splitlines()[1]
+    assert json.loads(displayed_query) == provider.search.call_args.args[0] == query
+
+
 @pytest.mark.parametrize("timeout", [0, -1, float("inf"), float("nan")])
 def test_invalid_timeouts_are_rejected(timeout):
     with pytest.raises(ValueError):

@@ -174,8 +174,10 @@ class SearchAction:
         provider = (
             self.provider if self.provider is not None else ParallelSearch(self.config)
         )
+        # Make terminal controls and directional formatting visible before consent.
+        displayed_query = json.dumps(query, ensure_ascii=True)
         permission = (
-            f"Send this exact query to {provider.name} for web search?\n{query}\n"
+            f"Send this exact query to {provider.name} for web search?\n{displayed_query}\n"
             "Do not approve private or sensitive information. "
             f"{provider.privacy_notice} "
             "Decline to cancel; Ctrl-C stops a running request."
